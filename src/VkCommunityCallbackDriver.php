@@ -74,7 +74,7 @@ use Mimey\MimeTypes;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-
+//test
 class VkCommunityCallbackDriver extends HttpDriver {
     const DRIVER_NAME = "VkCommunityCallback";
 
