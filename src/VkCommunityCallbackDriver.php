@@ -886,7 +886,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
 
 
         $ret = [
-            'data' => array_merge($data, $additionalParameters)
+            'data' => array_merge($data, (array)$additionalParameters)
         ];
 
         return $ret;
