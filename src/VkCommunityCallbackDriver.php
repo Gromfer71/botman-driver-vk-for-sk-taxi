@@ -772,8 +772,19 @@ class VkCommunityCallbackDriver extends HttpDriver {
             $answer->setText($message_object["text"]);
             $answer->setValue($message->getText());
         }
+		
+		
+		$buttonsLang = require resource_path('lang/ru/buttons.php');
+        $buttonsLang = array_flip($buttonsLang);
 
-        return $answer;
+        $messageText = $message->getText();
+
+        if (array_key_exists( $messageText,$buttonsLang)) {
+            $messageText = $buttonsLang[$messageText];
+            return Answer::create($messageText)->setInteractiveReply(true)->setMessage($message)->setValue($messageText);
+        }
+		
+        return Answer::create($messageText)->setInteractiveReply(false)->setMessage($message);
     }
 
     /**
