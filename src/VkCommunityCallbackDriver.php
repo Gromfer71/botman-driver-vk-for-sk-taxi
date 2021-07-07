@@ -731,7 +731,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
      * @throws VKDriverException
      * @throws VKDriverDeprecatedFeature
      */
-    public function getUser(IncomingMessage $matchingMessage)
+   public function getUser(IncomingMessage $matchingMessage)
     {
         // Retrieving all relevant information about user
         $fields = $this->config->get("user_fields", "");
@@ -740,8 +740,11 @@ class VkCommunityCallbackDriver extends HttpDriver {
         if(mb_strpos($fields, "screen_name") !== false)
             throw new VKDriverDeprecatedFeature('screen_name is already be sent by the driver. Please, remove the screen_name from VK_USER_FIELDS (or $botmanSettings["vk"]["user_fields"]) and use $bot->getUser()->getUsername() instead.');
 
+        $id = $matchingMessage->getExtras("message_object")["from_id"];
+
+
         $response = $this->api("users.get", [
-            "user_ids" => $matchingMessage->getExtras("message_object")["from_id"],
+            "user_ids" => $id,
             "fields" => ($fields == "") ? "screen_name" : "screen_name," . $fields
         ], true);
 
@@ -751,7 +754,13 @@ class VkCommunityCallbackDriver extends HttpDriver {
 
 
         // TODO: remade with proper user class suitable for VK user
-        return new User($matchingMessage->getExtras("message_object")["from_id"], $first_name, $last_name, $username, $response["response"][0]);
+
+        if ((int)$id > 0) {
+            return new User($id, $first_name, $last_name, $username, $response["response"][0]);
+
+        } else {
+            return new User($matchingMessage->getExtras("message_object")["peer_id"], $first_name, $last_name, $username, $response["response"][0]);
+        }
     }
 
     /**
@@ -760,7 +769,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
      * @param IncomingMessage $message
      * @return Answer
      */
-    public function getConversationAnswer(IncomingMessage $message)
+        public function getConversationAnswer(IncomingMessage $message)
     {
 
         $answer = Answer::create($message->getText())->setMessage($message);
@@ -768,23 +777,22 @@ class VkCommunityCallbackDriver extends HttpDriver {
         $message_object = $message->getExtras("message_object");
 
         if(isset($message_object["payload"])){
-            $answer->setInteractiveReply(true);
-            $answer->setText($message_object["text"]);
-            $answer->setValue($message->getText());
-        }
-		
-		
-		$buttonsLang = require resource_path('lang/ru/buttons.php');
-        $buttonsLang = array_flip($buttonsLang);
+            $buttonsLang = require resource_path('lang/ru/buttons.php');
+            $buttonsLang = array_flip($buttonsLang);
+            $messageText = $message_object["text"];
 
-        $messageText = $message->getText();
+            if (array_key_exists( $messageText,$buttonsLang)) {
+                $messageText = $buttonsLang[$messageText];
+                $answer->setInteractiveReply(true);
+            }
 
-        if (array_key_exists( $messageText,$buttonsLang)) {
-            $messageText = $buttonsLang[$messageText];
-            return Answer::create($messageText)->setInteractiveReply(true)->setMessage($message)->setValue($messageText);
+            //$answer->setText($message_object["text"]);
+            $answer->setText($messageText);
+            $answer->setValue($messageText);
+            
         }
-		
-        return Answer::create($messageText)->setInteractiveReply(false)->setMessage($message);
+
+       return $answer;
     }
 
     /**
