@@ -1243,7 +1243,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
     {
         switch ($payload->get("type")) {
             case "message_new":
-                return $this->payload->get("object")["message"];
+                return $this->payload->get("object");
 
             case "message_reply":
             case "message_edit":
