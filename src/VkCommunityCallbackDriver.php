@@ -70,6 +70,7 @@ use BotMan\Drivers\VK\Extensions\VKKeyboardButton;
 use BotMan\Drivers\VK\Extensions\VKKeyboardRow;
 use CURLFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Mimey\MimeTypes;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
@@ -831,7 +832,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
                 $actions = $message->getActions();
 
                 $inline = false; // Force the keyboard to be non-inline
-                $one_time = true; // Force the keyboard to be shown once
+                $one_time = false; // Force the keyboard to be shown once
 
                 $rows = Collection::make($actions)
                     // Use only BotMan\BotMan\Messages\Outgoing\Actions\Button class to send
@@ -848,6 +849,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
 
                         // Build a keyboard button
                         $button = new VKKeyboardButton();
+
                         $button->setPayload(json_encode($item));
 
                         // Set button text
@@ -1165,6 +1167,15 @@ class VkCommunityCallbackDriver extends HttpDriver {
 
         if(!isset($post_data["v"]))             $post_data["v"] = $this->config->get("version");
         if(!isset($post_data["access_token"]))  $post_data["access_token"] = $this->config->get("token");
+        if((!isset($post_data['message']) || $post_data['message'] == '') && $method == 'messages.send') {
+            return [];
+            $post_data['message'] = 'ᅠ ᅠ ';
+        }
+        $post_data['one_time'] = true;
+        //$post_data['message'] = null;
+        //$post_data['lat'] = 56.652627;
+       // $post_data['long'] = 124.719378;
+
 
         $response = $this->http->post($this->config->get("endpoint").$method, [], $post_data, [], false);
 
@@ -1174,7 +1185,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
 
         if(json_decode($response->getContent(),true) === false)
             throw new VKDriverException("VK API returned incorrect JSON-data. Response:\n".print_r($response, true));
-
+    
         $json = json_decode($response->getContent(),true);
 
         if(isset($json["error"]))
@@ -1232,6 +1243,16 @@ class VkCommunityCallbackDriver extends HttpDriver {
     {
         return $this->peer_id >= 2000000000;
     }
+    /*
+     * Careful! VK USES LONG BUT IN BOT WE USE JUST LON!
+     */
+    public function sendLocation($lat, $long)
+    {
+        $data['lat'] = $lat;
+        $data['long'] = $long;
+
+        return $this->api("messages.send", $data);
+    }
 
     /**
      * Retrieves a private message from payload.
@@ -1253,5 +1274,6 @@ class VkCommunityCallbackDriver extends HttpDriver {
                 return false;
         }
     }
+
 
 }
