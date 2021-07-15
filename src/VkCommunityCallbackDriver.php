@@ -850,7 +850,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
                         // Build a keyboard button
                         $button = new VKKeyboardButton();
 
-                        $button->setPayload(json_encode($item));
+                        $button->setPayload(json_encode($item, JSON_UNESCAPED_UNICODE));
 
                         // Set button text
                         $button->setText($item["action"]["label"] ?? $buttonData["text"]);
