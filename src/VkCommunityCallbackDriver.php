@@ -1,6 +1,8 @@
 <?php
 namespace BotMan\Drivers\VK;
 
+use App\Services\ButtonsFormatterService;
+use App\Services\VKButtonsFormatterService;
 use BotMan\BotMan\Drivers\Events\GenericEvent;
 use BotMan\BotMan\Drivers\HttpDriver;
 use BotMan\BotMan\Interfaces\DriverEventInterface;
@@ -831,8 +833,10 @@ class VkCommunityCallbackDriver extends HttpDriver {
                 /** @var QuestionActionInterface[] $actions */
                 $actions = $message->getActions();
 
+
                 $inline = false; // Force the keyboard to be non-inline
                 $one_time = false; // Force the keyboard to be shown once
+                $format = collect($actions)->first()['additional']['config'] ?? null;
 
                 $rows = Collection::make($actions)
                     // Use only BotMan\BotMan\Messages\Outgoing\Actions\Button class to send
@@ -849,7 +853,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
 
                         // Build a keyboard button
                         $button = new VKKeyboardButton();
-
+                        //$button->config = $item['config'] ?? '';
                         $button->setPayload(json_encode($item, JSON_UNESCAPED_UNICODE));
 
                         // Set button text
@@ -872,17 +876,17 @@ class VkCommunityCallbackDriver extends HttpDriver {
                             $button->setType($item["action"]["type"]);
 
                         // Return a row with one button
-                        return new VKKeyboardRow([$button]);
-                    })
-                    // Serializing to array
-                    ->toArray();
+                        return $button;
+                    });
 
                 $keyboard = new VKKeyboard();
                 $keyboard->setInline($inline);
                 $keyboard->setOneTime($one_time);
 
+                $rows = ButtonsFormatterService::format($rows, $format);
+
                 foreach($rows as $row){
-                    $keyboard->addRows($row);
+                    $keyboard->addRows(new VKKeyboardRow($row));
                 }
 
                 $data["keyboard"] = $keyboard->toJSON();
@@ -1071,6 +1075,10 @@ class VkCommunityCallbackDriver extends HttpDriver {
      */
     public function sendPayload($payload)
     {
+        if(mb_strlen($payload['data']['message']) > 4096) {
+            $payload['data']['message'] = mb_substr($payload['data']['message'], 0, 4096);
+        }
+
         return $this->api("messages.send", $payload["data"]);
     }
 
