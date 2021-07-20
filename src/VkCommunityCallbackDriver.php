@@ -882,7 +882,9 @@ class VkCommunityCallbackDriver extends HttpDriver {
                 $keyboard = new VKKeyboard();
                 $keyboard->setInline($inline);
                 $keyboard->setOneTime($one_time);
-
+                if($format == ButtonsFormatterService::CITY_MENU_FORMAT) {
+                    $format = ButtonsFormatterService::SPLIT_BY_THREE_EXCLUDE_FIRST;
+                }
                 $rows = ButtonsFormatterService::format($rows, $format);
 
                 foreach($rows as $row){
