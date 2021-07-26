@@ -780,6 +780,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
         $message_object = $message->getExtras("message_object");
 
         if(isset($message_object["payload"])){
+
             $buttonsLang = require resource_path('lang/ru/buttons.php');
             $buttonsLang = array_flip($buttonsLang);
             $messageText = $message_object["text"];
@@ -787,15 +788,36 @@ class VkCommunityCallbackDriver extends HttpDriver {
             if (array_key_exists( $messageText,$buttonsLang)) {
                 $messageText = $buttonsLang[$messageText];
                 $answer->setInteractiveReply(true);
+
             }
 
             //$answer->setText($message_object["text"]);
             $answer->setText($messageText);
-            $answer->setValue($messageText);
-            
+            $answer->setValue(json_decode($message_object["payload"], true)['__message'] ?? null);
+
+
         }
 
        return $answer;
+
+
+
+
+
+
+
+
+//            $answer = Answer::create($message->getText())->setMessage($message);
+//
+//            $message_object = $message->getExtras("message_object");
+//
+//            if(isset($message_object["payload"])){
+//                $answer->setInteractiveReply(true);
+//                $answer->setText($message_object["text"]);
+//                $answer->setValue($message->getText());
+//            }
+//
+//            return $answer;
     }
 
     /**
