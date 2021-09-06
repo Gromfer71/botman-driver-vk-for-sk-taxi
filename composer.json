@@ -23,7 +23,7 @@
   ],
   "require": {
     "php": ">=7.0",
-    "botman/botman": "~2.1|~3.0",
+    "botman/botman": "~2.1|~3.0|dev-sk-taxi",
     "ext-json": "*",
     "ext-curl": "*",
     "ralouphie/mimey": "^2.1",
