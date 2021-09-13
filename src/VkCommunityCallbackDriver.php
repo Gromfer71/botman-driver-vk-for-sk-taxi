@@ -122,6 +122,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
      */
     protected $driverEvent;
 
+    public $needToAddAddressesToMessage;
 
     /**
      * Building the payload
