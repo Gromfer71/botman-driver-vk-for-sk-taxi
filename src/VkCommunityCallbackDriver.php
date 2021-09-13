@@ -122,7 +122,8 @@ class VkCommunityCallbackDriver extends HttpDriver {
      */
     protected $driverEvent;
 
-    public $needToAddAddressesToMessage;
+    public $needToAddAddressesToMessage = true;
+
 
     /**
      * Building the payload
@@ -735,7 +736,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
      * @throws VKDriverException
      * @throws VKDriverDeprecatedFeature
      */
-   public function getUser(IncomingMessage $matchingMessage)
+    public function getUser(IncomingMessage $matchingMessage, $id = 0)
     {
         // Retrieving all relevant information about user
         $fields = $this->config->get("user_fields", "");
@@ -773,52 +774,41 @@ class VkCommunityCallbackDriver extends HttpDriver {
      * @param IncomingMessage $message
      * @return Answer
      */
-        public function getConversationAnswer(IncomingMessage $message)
+    public function getConversationAnswer(IncomingMessage $message)
     {
 
         $answer = Answer::create($message->getText())->setMessage($message);
-
+        if(!$answer->getText()) {
+            $answer->setText(trans('messages.invalid message'));
+        }
         $message_object = $message->getExtras("message_object");
 
         if(isset($message_object["payload"])){
-
             $buttonsLang = require resource_path('lang/ru/buttons.php');
             $buttonsLang = array_flip($buttonsLang);
             $messageText = $message_object["text"];
 
+
             if (array_key_exists( $messageText,$buttonsLang)) {
                 $messageText = $buttonsLang[$messageText];
                 $answer->setInteractiveReply(true);
-
             }
 
             //$answer->setText($message_object["text"]);
             $answer->setText($messageText);
-            $answer->setValue(json_decode($message_object["payload"], true)['__message'] ?? null);
+            $answer->setValue($messageText);
+
+
+            $value = collect(json_decode($message_object['payload'], JSON_UNESCAPED_UNICODE))->get('__message');
+
+            if($answer->getText() > 0 && $answer->getText() <= 25) {
+                $answer->setText($value);
+            }
 
 
         }
 
-       return $answer;
-
-
-
-
-
-
-
-
-//            $answer = Answer::create($message->getText())->setMessage($message);
-//
-//            $message_object = $message->getExtras("message_object");
-//
-//            if(isset($message_object["payload"])){
-//                $answer->setInteractiveReply(true);
-//                $answer->setText($message_object["text"]);
-//                $answer->setValue($message->getText());
-//            }
-//
-//            return $answer;
+        return $answer;
     }
 
     /**
@@ -833,6 +823,10 @@ class VkCommunityCallbackDriver extends HttpDriver {
     public function buildServicePayload($message, $matchingMessage, $additionalParameters = [])
     {
         $text = $message->getText();
+        $additionalParameters = collect($additionalParameters);
+        if($additionalParameters->get('location') == 'addresses') {
+            $text .= 'Тут будут адреса';
+        }
         $peer_id = (!empty($matchingMessage->getRecipient())) ? $matchingMessage->getRecipient() : $matchingMessage->getSender();
 
         $data = [
@@ -860,6 +854,10 @@ class VkCommunityCallbackDriver extends HttpDriver {
                 $inline = false; // Force the keyboard to be non-inline
                 $one_time = false; // Force the keyboard to be shown once
                 $format = collect($actions)->first()['additional']['config'] ?? null;
+                $location = collect($actions)->first()['additional']['location'] ?? null;
+                if($location == 'addresses') {
+                    $format = ButtonsFormatterService::SPLIT_BY_THREE_EXCLUDE_FIRST;
+                }
 
                 $rows = Collection::make($actions)
                     // Use only BotMan\BotMan\Messages\Outgoing\Actions\Button class to send
@@ -867,7 +865,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
                         return ($button instanceof Button);
                     })
                     // Use "additional" field as base, set required but unset values
-                    ->map(function($buttonData){
+                    ->map(function($buttonData) use ($location) {
                         $item = $buttonData["additional"];
 
                         // Unset field of migration (used in older versions of the driver)
@@ -898,6 +896,9 @@ class VkCommunityCallbackDriver extends HttpDriver {
                         if(isset($item["action"]["type"]))
                             $button->setType($item["action"]["type"]);
 
+                        if($location == 'addresses' && isset($buttonData['additional']['number'])) {
+                            $button->setText($buttonData['additional']['number']);
+                        }
                         // Return a row with one button
                         return $button;
                     });
@@ -930,6 +931,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
             } else
                 $data["attachment"] = $this->prepareAttachments($matchingMessage, $attachment);
         }
+
 
         if(isset($data["attachment"]) && is_array($data["attachment"]) && count($data["attachment"]) <= 0) unset($data["attachment"]);
         if(isset($data["attachment"]) && is_array($data["attachment"])) $data["attachment"] = implode(",", $data["attachment"]);
@@ -1204,10 +1206,10 @@ class VkCommunityCallbackDriver extends HttpDriver {
             return [];
             $post_data['message'] = 'ᅠ ᅠ ';
         }
-        $post_data['one_time'] = true;
+        //$post_data['one_time'] = true;
         //$post_data['message'] = null;
         //$post_data['lat'] = 56.652627;
-       // $post_data['long'] = 124.719378;
+        // $post_data['long'] = 124.719378;
 
 
         $response = $this->http->post($this->config->get("endpoint").$method, [], $post_data, [], false);
@@ -1218,7 +1220,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
 
         if(json_decode($response->getContent(),true) === false)
             throw new VKDriverException("VK API returned incorrect JSON-data. Response:\n".print_r($response, true));
-    
+
         $json = json_decode($response->getContent(),true);
 
         if(isset($json["error"]))
