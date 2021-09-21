@@ -3,6 +3,7 @@ namespace BotMan\Drivers\VK;
 
 use App\Services\ButtonsFormatterService;
 use App\Services\VKButtonsFormatterService;
+use Barryvdh\TranslationManager\Models\Translation;
 use BotMan\BotMan\Drivers\Events\GenericEvent;
 use BotMan\BotMan\Drivers\HttpDriver;
 use BotMan\BotMan\Interfaces\DriverEventInterface;
@@ -784,8 +785,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
         $message_object = $message->getExtras("message_object");
 
         if(isset($message_object["payload"])){
-            $buttonsLang = require resource_path('lang/ru/buttons.php');
-            $buttonsLang = array_flip($buttonsLang);
+            $buttonsLang = Translation::where('group', 'buttons')->select('key', 'value')->pluck('key', 'value')->toArray();
             $messageText = $message_object["text"];
 
 
