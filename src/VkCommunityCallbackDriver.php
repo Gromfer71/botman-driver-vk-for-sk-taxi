@@ -856,8 +856,12 @@ class VkCommunityCallbackDriver extends HttpDriver {
                 $format = collect($actions)->first()['additional']['config'] ?? null;
                 $location = collect($actions)->first()['additional']['location'] ?? null;
                 if($location == 'addresses') {
-                    $format = ButtonsFormatterService::SPLIT_BY_THREE_EXCLUDE_FIRST;
+                    if (!$format) {
+                        $format = ButtonsFormatterService::SPLIT_BY_THREE_EXCLUDE_FIRST;
+                    }
                 }
+
+
 
                 $rows = Collection::make($actions)
                     // Use only BotMan\BotMan\Messages\Outgoing\Actions\Button class to send
