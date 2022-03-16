@@ -822,7 +822,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
      */
     public function buildServicePayload($message, $matchingMessage, $additionalParameters = [])
     {
-        $text = $message->getText();
+        $text = $message->getText() ?: ' ';
         $additionalParameters = collect($additionalParameters);
         if($additionalParameters->get('location') == 'addresses') {
             $text .= 'Тут будут адреса';
@@ -1020,7 +1020,8 @@ class VkCommunityCallbackDriver extends HttpDriver {
                 }
 
                 // Send audio as voice message
-                if(is_bool($attachment->getExtras("vk_as_voice")) && $attachment->getExtras("vk_as_voice") == true){
+                //if(is_bool($attachment->getExtras("vk_as_voice")) && $attachment->getExtras("vk_as_voice") == true){
+
 
                     // Show "*bot* is recording audiomessage" caption
                     $this->sendActivity($matchingMessage, self::ACTIVITY_AUDIO_MESSAGE);
@@ -1045,7 +1046,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
 
                     $ret[] = "audio_message".$save["response"]["audio_message"]['owner_id']."_".$save["response"]["audio_message"]['id'];
                     break;
-                }
+
 
 
 
@@ -1215,7 +1216,6 @@ class VkCommunityCallbackDriver extends HttpDriver {
         //$post_data['lat'] = 56.652627;
         // $post_data['long'] = 124.719378;
 
-
         $response = $this->http->post($this->config->get("endpoint").$method, [], $post_data, [], false);
 
         //TODO: use Laravel-native value prettifying method (?)
@@ -1227,8 +1227,10 @@ class VkCommunityCallbackDriver extends HttpDriver {
 
         $json = json_decode($response->getContent(),true);
 
-        if(isset($json["error"]))
-            throw new VKDriverException("VK API returned error when processing method '{$method}': {$json["error"]["error_msg"]}. Response:\n".print_r($response, true));
+        if(isset($json["error"]) && $json['error']['error_msg'] !== 'One of the parameters specified was missing or invalid: message is empty or invalid') {
+            Log::error("VK API returned error when processing method '{$method}': {$json["error"]["error_msg"]}. Response:\n".print_r($response, true));
+        }
+            //throw new VKDriverException("VK API returned error when processing method '{$method}': {$json["error"]["error_msg"]}. Response:\n".print_r($response, true));
 
         if($asArray)
             return $json;
@@ -1246,9 +1248,8 @@ class VkCommunityCallbackDriver extends HttpDriver {
     public function upload($url, $filename/*, $asArray = false*/)
     {
         // Saving file to temp folder
-        $tempFileName = tempnam(sys_get_temp_dir(), self::DRIVER_NAME . '_');
+        $tempFileName = tempnam(sys_get_temp_dir(), '');
         file_put_contents($tempFileName, file_get_contents($filename));
-
         // Rename with correct extension (required for uploading)
         $ext = (new MimeTypes())
             ->getExtension(mime_content_type($tempFileName));
