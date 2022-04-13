@@ -11,7 +11,7 @@ class VKKeyboardButton {
     const COLOR_SECONDARY = "secondary";
     const COLOR_POSITIVE = "positive";
     const COLOR_NEGATIVE = "negative";
-    const EMPTY_LABEL = " "; // Special char, imitates empty string
+    const EMPTY_LABEL = ""; // Special char, imitates empty string
 
     // Max UTF-8 string length
     const MAX_CHARS = 40;
@@ -25,10 +25,9 @@ class VKKeyboardButton {
     }
 
     /** @var string */
-    protected $color = self::COLOR_PRIMARY;
+    protected $color;
     /** @var array */
     protected $action = [
-        "label" => "Button",
         "type" => "text",
         "payload" => "{}"
     ];
@@ -104,10 +103,17 @@ class VKKeyboardButton {
      * @return array
      */
     public function toArray(){
-        return [
-            "color" => $this->color,
-            "action" => $this->action
-        ];
+        if($this->color) {
+            return [
+                "color" => $this->color,
+                "action" => $this->action
+            ];
+        } else {
+            return [
+                "action" => $this->action
+            ];
+        }
+
     }
 
 

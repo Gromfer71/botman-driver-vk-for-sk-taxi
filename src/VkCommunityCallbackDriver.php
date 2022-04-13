@@ -777,6 +777,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
      */
     public function getConversationAnswer(IncomingMessage $message)
     {
+  
 
         $answer = Answer::create($message->getText())->setMessage($message);
         if(!$answer->getText()) {
@@ -822,7 +823,7 @@ class VkCommunityCallbackDriver extends HttpDriver {
      */
     public function buildServicePayload($message, $matchingMessage, $additionalParameters = [])
     {
-        $text = $message->getText() ?: ' ';
+        $text = $message->getText() ?: '';
         $additionalParameters = collect($additionalParameters);
         if($additionalParameters->get('location') == 'addresses') {
             $text .= 'Тут будут адреса';
@@ -882,15 +883,12 @@ class VkCommunityCallbackDriver extends HttpDriver {
                         $button->setPayload(json_encode($item, JSON_UNESCAPED_UNICODE));
 
                         // Set button text
-                        $button->setText($item["action"]["label"] ?? $buttonData["text"]);
+                        if(($buttonData["value"]) != 'order by location') {
+                            $button->setText($item["action"]["label"] ?? $buttonData["text"]);
+                        }
 
-                        // Set the color
-                        if(isset($item["color"]))
-                            $button->setColor($item["color"]);
-                        elseif(isset($buttonData["color"]))
-                            $button->setColor($buttonData["color"]);
-                        else
-                            $button->setColor(VKKeyboardButton::COLOR_PRIMARY);
+
+
 
                         // Value
                         if(isset($buttonData["value"]))
