@@ -95,6 +95,10 @@ class VKKeyboard {
 
         $btns_count = 0;
         foreach($this->rows as $row){
+            if(!$row) {
+                continue;
+            }
+
             // Buttons in row limit
             $serializedRows[] = Collection::make($row->toArray())->reject(function($item, $key) use($_that, &$btns_count){
                 $btns_count++;
